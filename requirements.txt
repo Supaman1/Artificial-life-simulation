@@ -1,3 +1,5 @@
 taichi>=1.7.0
-numpy
+time
 math
+numpy
+matplotlib.pyplot
