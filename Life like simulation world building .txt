@@ -1,0 +1,163 @@
+================================================================================
+          GPU EVOLUTIONARY ECOSYSTEM SIMULATION ENGINE - SPECIFICATION
+================================================================================
+Engine Vision: High-performance, large-scale Artificial Life (ALife) engine
+Target Hardware: NVIDIA Tesla T4 GPU (Google Colab Free Tier, CuPy/CUDA)
+Target Scale: ~1,000,000 active entities @ 60 FPS real-time / 1000+ FPS headless
+Memory Architecture: Structure of Arrays (SoA) 100% resident in VRAM
+Trigger Keyword: ooga booga
+
+--------------------------------------------------------------------------------
+1. HETEROGENEOUS ENTITY BUFFERS & MEMORY FOOTPRINT
+--------------------------------------------------------------------------------
+Entity Data Architecture is split into 3 distinct SoA buffers to optimize 
+VRAM cache efficiency and memory alignment:
+
+[1] ANIMAL BUFFER (Herbivores, Carnivores, Omnivores, Sanguivores, Detritivores)
+    - Footprint: 85 Bytes / Agent (65 Quantized Variables)
+    - Capacity: 200,000 - 500,000 Agents (~17 - 42.5 MB VRAM)
+
+[2] PLANT / RESOURCE BUFFER
+    - Footprint: 12 Bytes / Entity (6 Variables)
+    - Capacity: 1,000,000+ Plants (~12 MB VRAM)
+    - Variables: GRID_X (INT16), GRID_Y (INT16), BIOMASS (UINT8), 
+                 MAX_BIOMASS (UINT8), PLANT_TYPE (UINT8), GROWTH_RATE (UINT8), 
+                 PLANT_FLAGS (UINT32 Bitmask)
+
+[3] PATHOGEN / DISEASE BUFFER
+    - Footprint: 16 Bytes / Strain (9 Variables)
+    - Capacity: 10,000 Strains (~0.16 MB VRAM)
+    - Variables: STRAIN_ID (INT32), VIRULENCE (UINT8), LETHALITY (UINT8), 
+                 MUTATION_RATE (UINT8), INCUBATION_TIME (UINT8), 
+                 TRANSMISSION_TYPE (UINT8), TARGET_HOST_DIET (UINT8), 
+                 RECOVERY_RATE (UINT8), DISEASE_FLAGS (UINT32 Bitmask)
+
+Total VRAM Footprint for 1.2M+ Entities: ~45 - 85 MB (< 0.5% of T4 VRAM)
+
+--------------------------------------------------------------------------------
+2. COMPLETE ANIMAL BUFFER LAYOUT (65 VARIABLES - 85 BYTES)
+--------------------------------------------------------------------------------
+Subsystem A: Kinematics & Spatial Physics (14 Bytes)
+  0. GRID_X               [INT16] : World Tile X (0 - 65,535)
+  1. GRID_Y               [INT16] : World Tile Y (0 - 65,535)
+  2. SUB_X                [UINT8] : Sub-pixel Offset X (0 - 255)
+  3. SUB_Y                [UINT8] : Sub-pixel Offset Y (0 - 255)
+  4. VEL_X                [FP16]  : Velocity X
+  5. VEL_Y                [FP16]  : Velocity Y
+  6. ACC_X                [FP16]  : Acceleration X
+  7. ACC_Y                [FP16]  : Acceleration Y
+
+Subsystem B: Physical Vitals & Homeostasis (10 Bytes)
+  8. ENERGY               [UINT8] : Current fuel pool (0-255 -> 0-100%)
+  9. MAX_ENERGY           [UINT8] : Maximum energy cap
+ 10. HEALTH               [UINT8] : Physical health integrity
+ 11. HYDRATION            [UINT8] : Water level
+ 12. STAMINA              [UINT8] : Burst stamina for sprinting/combat
+ 13. BODY_TEMP            [UINT8] : Internal core body temperature
+ 14. TOXICITY             [UINT8] : Metabolic waste / poison accumulation
+ 15. AGE                  [UINT8] : Lifespan progression counter
+ 16. IMMUNE_STRENGTH      [UINT8] : Resistance to active pathogens
+ 17. PATHOGEN_LOAD        [UINT8] : Active viral/bacterial burden
+
+Subsystem C: Drive-Reduction Deficits (10 Bytes) [Deficit = Target - Current]
+ 18. DRIVE_HUNGER         [UINT8] : Urge to consume food
+ 19. DRIVE_THIRST         [UINT8] : Urge to seek water sources
+ 20. DRIVE_FEAR           [UINT8] : Urge to flee threats/predators
+ 21. DRIVE_REST           [UINT8] : Urge to sleep/idle
+ 22. DRIVE_MATING         [UINT8] : Urge to pass on genetic material
+ 23. DRIVE_SOCIAL         [UINT8] : Urge to cluster/flock with same species
+ 24. DRIVE_AGGRESSION     [UINT8] : Urge to attack/fight rivals
+ 25. DRIVE_THERMO         [UINT8] : Urge to find shade or thermal shelter
+ 26. DRIVE_CURIOSITY      [UINT8] : Urge to explore unmapped grid cells
+ 27. DRIVE_DOMINANCE      [UINT8] : Urge to challenge rivals for alpha rank
+
+Subsystem D: Mutable Genetics & Phenotypes (25 Bytes)
+ 28. GENE_MAX_SPEED       [UINT8] : Top movement velocity
+ 29. GENE_SIZE            [UINT8] : Body mass (effects health & fuel drain)
+ 30. GENE_PERCEPTION_RAD  [UINT8] : Vision radius
+ 31. GENE_PERCEPTION_FOV  [UINT8] : Vision cone angle
+ 32. GENE_DIET_SPECTRUM   [UINT8] : 0=Herbivore, 128=Omnivore, 255=Carnivore
+ 33. GENE_BASE_METABOLISM [UINT8] : Passive fuel consumption rate
+ 34. GENE_DIGESTION_EFF   [UINT8] : Energy extraction efficiency from food
+ 35. GENE_SANGUIVORE      [UINT8] : Non-lethal parasitic blood drain power
+ 36. GENE_DETRITIVORE     [UINT8] : Corpse / rotting waste digestion capability
+ 37. GENE_CAMOUFLAGE      [UINT8] : Stealth scalar (shrinks predator vision)
+ 38. GENE_ARMOR           [UINT8] : Damage reduction multiplier
+ 39. GENE_ATTACK_POWER    [UINT8] : Base combat damage output
+ 40. GENE_VENOM           [UINT8] : Toxicity applied on bite attack
+ 41. GENE_REPRO_THRESHOLD [UINT8] : Energy % required to trigger reproduction
+ 42. GENE_LITTER_SIZE     [UINT8] : Offspring count per birth
+ 43. GENE_MUTATION_RATE   [UINT8] : Probability scalar for genetic drift
+ 44. GENE_SWARM_INCLINATION[UINT8]: Solitary vs. Herd instinct
+ 45. GENE_THERMO_TOLERANCE[UINT8]: Climate adaptability range
+ 46. GENE_COLOR_R         [UINT8] : Visual phenotype Red
+ 47. GENE_COLOR_G         [UINT8] : Visual phenotype Green
+ 48. GENE_COLOR_B         [UINT8] : Visual phenotype Blue
+ 49. GENE_LIFESPAN        [UINT8] : Maximum natural age limit
+ 50. GENE_SLEEP_CYCLE    [UINT8] : Nocturnal vs. Diurnal preference
+ 51. GENE_TOOL_APTITUDE   [UINT8] : Terrain modification / nesting aptitude
+ 52. GENE_PHEROMONE_EMIT  [UINT8] : Ability to emit trail markers
+
+Subsystem E: Spatial Memory & Social State (10 Bytes)
+ 53. MEM_FOOD_GRID_X     [INT16] : Grid X of last known food location
+ 54. MEM_FOOD_GRID_Y     [INT16] : Grid Y of last known food location
+ 55. MEM_THREAT_GRID_X   [INT16] : Grid X of last predator encounter
+ 56. MEM_THREAT_GRID_Y   [INT16] : Grid Y of last predator encounter
+ 57. MEM_HOME_GRID_X     [INT16] : Grid X of nest/territory center
+ 58. MEM_HOME_GRID_Y     [INT16] : Grid Y of nest/territory center
+ 59. SOCIAL_RANK         [UINT8] : Rank in local herd (0=Runt, 255=Alpha)
+ 60. PHEROMONE_MARKER    [UINT8] : Active pheromone scent ID
+
+Subsystem F: Metadata & Bitmask Flags (16 Bytes)
+ 61. AGENT_ID            [INT32] : Unique agent ID
+ 62. SPECIES_ID          [INT32] : Lineage ID for speciation trees
+ 63. PARENT_ID           [INT32] : Ancestor ID
+ 64. BITMASK_FLAGS       [UINT32]: 32 Packed booleans (Bit 0: Alive, 
+                                   1: Sleeping, 2: Infected, 3: Pregnant, 
+                                   4: Alpha, 5: In Water, etc.)
+
+--------------------------------------------------------------------------------
+3. WORLD RULES & ENVIRONMENT MECHANICS
+--------------------------------------------------------------------------------
+1. Map Geometry & Migration Boundary:
+   - World divided into 3 Biomes: Tundra (Top), Temperate (Mid), Desert (Bottom).
+   - Boundary Soft Mask: Agents wandering too far past outer world edges are 
+     flagged as "Migrated Out" and recycled to bound VRAM usage.
+
+2. Energy Cycle & Fertilizer Soil:
+   - Closed thermodynamic loop.
+   - Dying agents drop Corpse Nodes. Rotting corpses deposit Soil Fertilizer 
+     into specific grid cells, boosting future plant growth rates locally.
+
+3. Water Bodies & Aquatic Transition Gene:
+   - Fixed lakes/rivers painted across grid tiles.
+   - Dynamic Gene: GENE_AQUATIC_SPECTRUM (0 - 255):
+     * 0-64 (Hydrophobic): Slowed/damaged in water; minimal water intake.
+     * 65-190 (Terrestrial/Amphibious): Normal land animal; drinks at water edge.
+     * 191-255 (Fully Aquatic/Fish): Suffocates on land; max speed in water.
+
+4. Corpse Decay & Disease Vectors:
+   - Corpse Biomass = GENE_SIZE * 100.
+   - Eaten fresh by Carnivores/Omnivores, decaying by Detritivores.
+   - Highly infected corpses act as environmental pathogen hot spots.
+
+--------------------------------------------------------------------------------
+4. GPU MUTATION ENGINE (WEIGHTED TIER SYSTEM)
+--------------------------------------------------------------------------------
+Mutations are evaluated in parallel on GPU using a weighted random distribution:
+  - Low Roll (85% chance)  : 0.1% - 2% shift (Micro-tuning/stasis)
+  - Med Roll (14% chance)  : 3.0% - 10% shift (Gradual adaptation)
+  - High Roll (1% chance)  : 20.0% - 50% shift (Macro-jump / Speciation event)
+
+All mutations are applied in 1 GPU clock pass using vectorized CuPy/CUDA tensors.
+
+--------------------------------------------------------------------------------
+5. GPU PERFORMANCE SYSTEMS
+--------------------------------------------------------------------------------
+- GPU-Native Spatial Hash Grid: Atomic grid binning reduces distance math 
+  from O(N^2) to O(N) linear time in VRAM.
+- Kernel Fusion: Core drive updates, metabolism, and movement executed in a single 
+  pass to maximize L1 cache hit rate.
+- Zero PCIe Bottleneck: Simulation loop remains 100% inside VRAM; CPU is only 
+  used to launch asynchronous GPU kernel commands.
+================================================================================
