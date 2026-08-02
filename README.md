@@ -1,6 +1,3 @@
-# Artificial-life-simulation
-GPU based Artificial Life simulation engine running 1,000,000 mutating life forms in real time with Taichi.
-
 # 🧬 ALife-GPU: High-Throughput Artificial Life Simulation Engine
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -43,4 +40,66 @@ A massively parallel, GPU-accelerated **Artificial Life (ALife) Simulation Engin
 │ Mutation &    │  ──►  │ Closed-Loop   │  ──►  │ Taichi GGUI   │
 │ Reproduction  │       │ Environment   │       │ Render Pass   │
 └───────────────┘       └───────────────┘       └───────────────┘
+
+📊 Memory Layout & VRAM Allocation
+To prevent hardware memory padding gaps, all entity structs are strictly ordered by byte-width alignment:
+| Entity Buffer | Max Capacity | Footprint / Entity | Total VRAM Allocation |
+|---|---|---|---|
+| Animal Field | 300,000 Agents | 85 Bytes | ~25.5 MB |
+| Plant Field | 1,000,000 Nodes | 16 Bytes | ~16.0 MB |
+| Pathogen Field | 10,000 Strains | 20 Bytes | ~0.20 MB |
+📁 Repository Structure
+alife-gpu-engine/
+│
+├── README.md               # Project documentation
+├── requirements.txt        # Dependencies
+├── .gitignore              # Git exclusion rules
+│
+├── src/
+│   ├── __init__.py
+│   ├── config.py           # Global world dimensions & engine parameters
+│   ├── structs.py          # Taichi struct blueprints & VRAM field allocations
+│   │
+│   ├── spatial/
+│   │   └── grid.py         # Spatial Hash Grid construction & neighbor lookup
+│   │
+│   ├── core/
+│   │   ├── initialization.py # World entity instantiation kernels
+│   │   ├── vitals.py       # Homeostasis decay, energy, & death processing
+│   │   ├── steering.py     # Drive utility AI & Reynolds kinematics
+│   │   └── genetics.py     # Reproduction & weighted mutation kernels
+│   │
+│   └── render/
+│       └── renderer.py     # LOD viewport rendering engine (Taichi GGUI)
+│
+└── main.py                 # Core engine execution entrypoint
+
+🚀 Getting Started
+Prerequisites
+ * Python: Version 3.8 or higher
+ * GPU Hardware: NVIDIA GPU with CUDA support (or Apple Silicon / Vulkan-compatible GPU)
+Installation
+ * Clone the repository:
+   git clone [https://github.com/YOUR_USERNAME/alife-gpu-engine.git](https://github.com/YOUR_USERNAME/alife-gpu-engine.git)
+cd alife-gpu-engine
+
+ * Create a virtual environment (Optional but recommended):
+   python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
+
+ * Install dependencies:
+   pip install -r requirements.txt
+
+ * Run the simulation:
+   python main.py
+
+⌨️ Controls & Navigation
+| Input | Action |
+|---|---|
+| Mouse Wheel | Zoom In / Out (Toggles between Point Cloud & Entity LOD view) |
+| Left Click + Drag | Pan Camera across world coordinates |
+| Spacebar | Pause / Resume Simulation Loop |
+| R Key | Reset World State & Re-initialize VRAM |
+📜 License
+Distributed under the MIT License. See LICENSE for more information.
 
