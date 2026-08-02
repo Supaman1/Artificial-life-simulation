@@ -41,44 +41,33 @@ A massively parallel, GPU-accelerated **Artificial Life (ALife) Simulation Engin
 │ Reproduction  │       │ Environment   │       │ Render Pass   │
 └───────────────┘       └───────────────┘       └───────────────┘
 
-📊 Memory Layout & VRAM Allocation
+```
+
+## 📊 Memory Layout & VRAM Allocation
 To prevent hardware memory padding gaps, all entity structs are strictly ordered by byte-width alignment:
+
 | Entity Buffer | Max Capacity | Footprint / Entity | Total VRAM Allocation |
 |---|---|---|---|
 | Animal Field | 300,000 Agents | 85 Bytes | ~25.5 MB |
 | Plant Field | 1,000,000 Nodes | 16 Bytes | ~16.0 MB |
 | Pathogen Field | 10,000 Strains | 20 Bytes | ~0.20 MB |
-📁 Repository Structure
-alife-gpu-engine/
-│
-├── README.md               # Project documentation
-├── requirements.txt        # Dependencies
-├── .gitignore              # Git exclusion rules
-│
-├── src/
-│   ├── __init__.py
-│   ├── config.py           # Global world dimensions & engine parameters
-│   ├── structs.py          # Taichi struct blueprints & VRAM field allocations
-│   │
-│   ├── spatial/
-│   │   └── grid.py         # Spatial Hash Grid construction & neighbor lookup
-│   │
-│   ├── core/
-│   │   ├── initialization.py # World entity instantiation kernels
-│   │   ├── vitals.py       # Homeostasis decay, energy, & death processing
-│   │   ├── steering.py     # Drive utility AI & Reynolds kinematics
-│   │   └── genetics.py     # Reproduction & weighted mutation kernels
-│   │
-│   └── render/
-│       └── renderer.py     # LOD viewport rendering engine (Taichi GGUI)
-│
-└── main.py                 # Core engine execution entrypoint
+## 📁 Repository Structure
 
-🚀 Getting Started
+```
+alife-gpu-engine/
+├── README.md               # Project documentation
+├── requirements.txt        # Dependencies (taichi, numpy)
+└── main.py                 # the whole code is in this just run this
+
+```
+
+## 🚀 Getting Started
 Prerequisites
  * Python: Version 3.8 or higher
+   
  * GPU Hardware: NVIDIA GPU with CUDA support (or Apple Silicon / Vulkan-compatible GPU)
 Installation
+
  * Clone the repository:
    git clone [https://github.com/YOUR_USERNAME/alife-gpu-engine.git](https://github.com/YOUR_USERNAME/alife-gpu-engine.git)
 cd alife-gpu-engine
