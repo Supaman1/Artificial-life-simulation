@@ -1,0 +1,41 @@
+# ==============================================================================
+#                 🎯 ENGINE GOALS & TECHNICAL MILESTONES
+# ==============================================================================
+#
+# GOAL 1: MASSIVE PARALLEL THROUGHPUT
+# ------------------------------------------------------------------------------
+# • Target 300,000+ active animal agents running concurrently at 30-60 FPS.
+# • Utilize data-oriented ECS layout to eliminate CPU bottlenecks entirely.
+# • Maximize VRAM memory bandwidth via strictly byte-aligned struct packing.
+#
+# GOAL 2: $O(1)$ SPATIAL NEIGHBOR SEARCH
+# ------------------------------------------------------------------------------
+# • Eliminate $O(N^2)$ brute-force distance calculations across all entities.
+# • Partition world into a 512 x 512 spatial grid over a 65,536 x 65,536 world map.
+# • Restrict target scanning to local 3x3 tile neighborhoods per agent.
+#
+# GOAL 3: EMERGENT BEHAVIOR VIA UTILITY AI
+# ------------------------------------------------------------------------------
+# • Drive agent decision-making purely through drive-reduction deficit scores.
+# • Translate AI desires into fluid motion using Reynolds steering kinematics.
+# • Observe complex collective dynamics (herding, flocking, pack hunting) naturally.
+#
+# GOAL 4: CLOSED-LOOP ECOSYSTEM THERMODYNAMICS
+# ------------------------------------------------------------------------------
+# • Enforce strict energy conservation across animal, plant, and corpse entities.
+# • Prevent infinite resource creation: dead bodies feed plants, plants feed herbivores.
+# • Produce natural, realistic Lotka-Volterra predator-prey population oscillations.
+#
+# GOAL 5: DYNAMIC SPECIATION & WEIGHTED MUTATIONS
+# ------------------------------------------------------------------------------
+# • Support continuous physical and behavioral adaptation over thousands of ticks.
+# • Implement a 3-tier mutation rate (85% micro, 14% adaptive, 1% macro jumps).
+# • Track natural selection of traits like max speed, size, vision, and camouflage.
+#
+# GOAL 6: MULTI-SCALE LEVEL-OF-DETAIL (LOD) VISUALIZATION
+# ------------------------------------------------------------------------------
+# • Zoomed-Out View: High-density point cloud rendered by genetic RGB traits.
+# • Zoomed-In View: Frustum-culled procedural "Little Guys" with facing direction.
+# • Utilize built-in GPU-accelerated Taichi GGUI for zero external visual dependencies.
+#
+# ==============================================================================
